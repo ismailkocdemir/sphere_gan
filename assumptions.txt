@@ -1,0 +1,3 @@
+1. No bias in conv layers. 
+2. Transformationdaki hata. Paper'daki dogru, supplement yanlis.
+3. Distance metrtic on sphere is the angle btween 2 points.
