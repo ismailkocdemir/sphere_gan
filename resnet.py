@@ -2,11 +2,13 @@ from torch import nn
 from torch.autograd import grad
 import torch
 
+from utils import *
+
 class conv3x3(nn.Module):
     def __init__(self, input_dim, output_dim = None, bias = False):
         super(conv3x3, self).__init__()
         
-        if output_dim=None:
+        if output_dim == None:
             output_dim = input_dim
 
         self.conv = nn.Conv2d(input_dim, output_dim, 3, stride=1, padding=1, bias = bias)
@@ -116,7 +118,7 @@ class ResidualBlock(nn.Module):
 
 
 
-class Generator(nn.Module):
+class GeneratorResNet(nn.Module):
     def __init__(self, dim=256, output_dim=3*64*64):
         super(Generator, self).__init__()
 
@@ -154,7 +156,7 @@ class Generator(nn.Module):
         #output = output.view(-1, 3 * self.dim * self.dim)
         return output
 
-class Discriminator(nn.Module):
+class DiscriminatorResNet(nn.Module):
     def __init__(self, dim=256):
         super(Discriminator, self).__init__()
 
@@ -167,7 +169,7 @@ class Discriminator(nn.Module):
         self.rb4 = ResidualBlockDownSample(self.dim, size=6)
         self.rb5 = ResidualBlock(self.dim, size=3)
 
-        self.gb = GeometricBlock(pool=True)
+        self.gb = GeometricBlock(dim=self.dim, pool=True)
 
 
     def forward(self, input):
@@ -184,55 +186,3 @@ class Discriminator(nn.Module):
         output = self.gb(output)
         
         return output
-
-
-class GeometricBlock(nn.Module):
-    def __init__(self, pool=False):
-        super().__init__()
-        self.pool = pool
-
-    def forward(self, u):
-        '''
-            Inverse Steregraphic Projection.
-        '''
-
-        # Here there should be another LReLU according to the paper. But we already applied that in the last Conv. layer before Geometric Block?
-        
-        # Global Average Pooling is not implemented in pytorch. Instead use adaptive avg. pooling and reduce spatial dim's to 1.
-        if self.pool:
-            u = F.adaptive_avg_pool2d(u, (1, 1))
-    
-        # Flatten
-        u = u.view(u.size()[0], -1)
-        
-        # Dense Layer
-        u = nn.Linear(u.size()[-1], 1024, bias=False)
-
-        # Inverse Projection
-        u_hat = 2*u / (torch.pow(torch.norm(u, dim=1), 2) + 1)
-        v = (torch.pow(torch.norm(u, dim=1), 2) -1 )/(torch.pow(torch.norm(u, dim=1), 2) + 1)
-        return torch.cat((u_hat, v), dim=1)
-
-
-class View(nn.Module):
-    def __init__(self, shape):
-        super().__init__()
-        self.shape = shape
-
-    def forward(self, input):
-        '''
-        Reshapes the input according to the shape saved in the view data structure.
-        '''
-        batch_size = input.size(0)
-        shape = (batch_size, *self.shape)
-        out = input.view(shape)
-        return out
-
-
-class Flatten(nn.Module):
-    def __init__(self,):
-        super().__init__()
-
-    def forward(self, x):
-        x = x.view(x.size()[0], -1)
-        return x
