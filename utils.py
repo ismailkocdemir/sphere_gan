@@ -33,8 +33,7 @@ class GeometricBlock(nn.Module):
 
         # Inverse Projection
         u_hat = 2*u / (torch.pow(torch.norm(u, dim=1, keepdim=True), 2) + 1)
-        v = (torch.pow(torch.norm(u, dim=1, keepdim=True), 2) -1 )/(torch.pow(torch.norm(u, dim=1, keepdim=True), 2) + 1)
-
+        v = (torch.pow(torch.norm(u, dim=1, keepdim=True), 2) - 1 ) / (torch.pow(torch.norm(u, dim=1, keepdim=True), 2) + 1)
         out = torch.cat((u_hat, v), dim=1)
         return out 
 
@@ -68,7 +67,11 @@ def weights_init(m):
     
     elif isinstance(m, nn.Linear):
     	nn.init.normal_(m.weight.data)
-    
+
+    elif isinstance(m, nn.BatchNorm2d):
+	    nn.init.constant_(m.weight, 1)
+	    nn.init.constant_(m.bias, 0)
+
 def total_moment_distance(output, target, moments, device):
 	#print(target.size(), output.size())
 	
@@ -94,7 +97,7 @@ def get_cifar10_dataloader(dataroot, batch_size, workers, image_size=32):
 	train_loader = torch.utils.data.DataLoader(
 						train_set,
 						batch_size=batch_size, shuffle=True,
-						num_workers=workers, pin_memory=False)
+						num_workers=workers, pin_memory=False, drop_last=True)
 
 	return train_loader
  
@@ -104,7 +107,7 @@ def get_stl10_dataloader(dataroot, batch_size, workers, image_size=48):
 					transform=transforms.Compose([
 					   transforms.Resize(image_size),
 					   transforms.ToTensor(),
-					   transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+					   transforms.Normalize((0.44671097, 0.4398105 , 0.4066468), (0.2603405 , 0.25657743, 0.27126738)),
 					   ]))
 
 	train_loader = torch.utils.data.DataLoader(

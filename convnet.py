@@ -9,7 +9,7 @@ class GeneratorConvNet(nn.Module):
         super(GeneratorConvNet, self).__init__()
 
         self.ln1 = nn.Linear(128, 6*6*512, bias=False)
-        self.reshape = View((-1, 512, 6, 6))
+        self.reshape = View((512, 6, 6))
         self.bn = nn.BatchNorm2d(512)
         self.relu = nn.ReLU(True)
 
@@ -56,34 +56,40 @@ class DiscriminatorConvNet(nn.Module):
         super(DiscriminatorConvNet, self).__init__()
 
         self.conv1_1 = nn.Conv2d(3, 64, 3, 1, 1, bias=False)
-        self.ln1_1 = nn.LayerNorm([64,48,48])
+        self.ln1_1 =  nn.LayerNorm([64,48,48]) #nn.BatchNorm2d(64)
         self.lrelu1_1 = nn.LeakyReLU(0.2, inplace=True)
         
         self.conv1_2 = nn.Conv2d(64, 64, 4, 2, 1, bias=False)
-        self.ln1_2 = nn.LayerNorm([64,24,24])
+        self.ln1_2 =  nn.LayerNorm([64,24,24]) #nn.BatchNorm2d(64)
         self.lrelu1_2 = nn.LeakyReLU(0.2, inplace=True)
 
 
         self.conv2_1 = nn.Conv2d(64, 128, 3, 1, 1, bias=False)
-        self.ln2_1 = nn.LayerNorm([128,24,24])
+        self.ln2_1 = nn.LayerNorm([128,24,24]) #nn.BatchNorm2d(128) #
         self.lrelu2_1 = nn.LeakyReLU(0.2, inplace=True)
         
         self.conv2_2 = nn.Conv2d(128, 128, 4, 2, 1, bias=False)
-        self.ln2_2 = nn.LayerNorm([128,12,12])
+        self.ln2_2 = nn.LayerNorm([128,12,12]) #nn.BatchNorm2d(128) #
         self.lrelu2_2 = nn.LeakyReLU(0.2, inplace=True)
 
 
         self.conv3_1 = nn.Conv2d(128, 256, 3, 1, 1, bias=False)
-        self.ln3_1 = nn.LayerNorm([256,12,12])
+        self.ln3_1 = nn.LayerNorm([256,12,12]) #nn.BatchNorm2d(256) # 
         self.lrelu3_1 = nn.LeakyReLU(0.2, inplace=True)
         
         self.conv3_2 = nn.Conv2d(256, 256, 4, 2, 1, bias=False)
-        self.ln3_2 = nn.LayerNorm([256,6,6])
+        self.ln3_2 = nn.LayerNorm([256,6,6]) #nn.BatchNorm2d(256) #
         self.lrelu3_2 = nn.LeakyReLU(0.2, inplace=True)
 
-
+        ## OLD CODE ##
         self.conv4 = nn.Conv2d(256, 512, 3, 1, 1, bias=False)
         self.gb = GeometricBlock(dim=512, pool=True)
+        ############
+
+        #self.conv4 = nn.Conv2d(256, 512, 3, 1, 1, bias=False)        
+        #self.ln_final = nn.Linear(512*6*6, 1)
+        #self.sigm = nn.Sigmoid()
+
 
     def forward(self, input):
         
@@ -95,7 +101,6 @@ class DiscriminatorConvNet(nn.Module):
         output = self.ln1_2(output)
         output = self.lrelu1_2(output)
 
-
         output = self.conv2_1(output)
         output = self.ln2_1(output)
         output = self.lrelu2_1(output)
@@ -103,7 +108,6 @@ class DiscriminatorConvNet(nn.Module):
         output = self.conv2_2(output)
         output = self.ln2_2(output)
         output = self.lrelu2_2(output)
-
 
         output = self.conv3_1(output)
         output = self.ln3_1(output)
@@ -113,7 +117,17 @@ class DiscriminatorConvNet(nn.Module):
         output = self.ln3_2(output)
         output = self.lrelu3_2(output)
 
+        ### OLD CODE ####
         output = self.conv4(output)
         output = self.gb(output)
+        ##################
+
+        #output = F.adaptive_avg_pool2d(output, (1, 1))
+        #output = self.conv4(output)
+        #output = output.view(output.size()[0], -1)
+        #output = self.ln_final(output)
+        #output = self.sigm(output)
+
+        
 
         return output

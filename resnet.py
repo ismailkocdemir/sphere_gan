@@ -19,22 +19,25 @@ class conv3x3(nn.Module):
 
 
 class ResidualBlockDownSample(nn.Module):
-    def __init__(self, input_dim,  size=64):
-        super(ResidualBlock, self).__init__()
+    def __init__(self, input_dim,  size=48):
+        super(ResidualBlockDownSample, self).__init__()
+        
         half_size = size//2
+        quarter_size = size//2
+        
         self.avg_pool1 = nn.AdaptiveAvgPool2d((half_size,half_size))
-        self.conv_shortcut = Conv2d(input_dim, input_dim, kernel_size = 1)
+        self.conv_shortcut = nn.Conv2d(input_dim, input_dim, kernel_size = 1)
 
-        self.relu1 = nn.LeakyReLU()
-        self.relu2 = nn.LeakyReLU()
+        self.relu1 = nn.LeakyReLU(0.2, inplace=True)
+        self.relu2 = nn.LeakyReLU(0.2, inplace=True)
 
         self.ln1 = nn.LayerNorm([input_dim, size, size])
-        self.ln2 = nn.LayerNorm([input_dim, size, size])
+        self.ln2 = nn.LayerNorm([input_dim, quarter_size, quarter_size])
         
         self.conv_1 = conv3x3(input_dim, input_dim, bias = False)
         self.conv_2 = conv3x3(input_dim, input_dim, bias = False)
         
-        self.avg_pool2 = nn.AdaptiveAvgPool2d((half_size,half_size))
+        self.avg_pool2 = nn.AdaptiveAvgPool2d((quarter_size,quarter_size))
         
         
     def forward(self, input):
@@ -45,7 +48,7 @@ class ResidualBlockDownSample(nn.Module):
         output = self.relu1(output)
         output = self.conv_1(output)
 
-        output = self.avg_pool(output)
+        output = self.avg_pool2(output)
 
         output = self.ln2(output)
         output = self.relu2(output)
@@ -55,20 +58,20 @@ class ResidualBlockDownSample(nn.Module):
 
 class ResidualBlockUpSample(nn.Module):
     def __init__(self, input_dim, size=64):
-        super(ResidualBlock, self).__init__()
+        super(ResidualBlockUpSample, self).__init__()
         
-        self.upsample1 = nn.UpSample(scale_factor=2)
-        self.conv_shortcut = Conv2d(input_dim, input_dim, kernel_size = 1)
+        self.upsample1 = nn.Upsample(scale_factor=2)
+        self.conv_shortcut = nn.Conv2d(input_dim, input_dim, kernel_size = 1)
 
-        self.relu1 = nn.ReLU()
-        self.relu2 = nn.ReLU()
+        self.relu1 = nn.ReLU(True)
+        self.relu2 = nn.ReLU(True)
 
         self.bn1 = nn.BatchNorm2d(input_dim)
         self.bn2 = nn.BatchNorm2d(input_dim)
         
         self.conv_1 = conv3x3(input_dim, input_dim, bias = False)
         self.conv_2 = conv3x3(input_dim, input_dim, bias = False)        
-        self.upsample2 = nn.UpSample(scale_factor=2)
+        self.upsample2 = nn.Upsample(scale_factor=2)
         
         
     def forward(self, input):
@@ -91,10 +94,10 @@ class ResidualBlock(nn.Module):
     def __init__(self, input_dim, size):
         super(ResidualBlock, self).__init__()
     
-        self.conv_shortcut = Conv2d(input_dim, input_dim, kernel_size = 1)
+        self.conv_shortcut = nn.Conv2d(input_dim, input_dim, kernel_size = 1)
 
-        self.relu1 = nn.LeakyReLU()
-        self.relu2 = nn.LeakyReLU()
+        self.relu1 = nn.LeakyReLU(0.2, inplace=True)
+        self.relu2 = nn.LeakyReLU(0.2, inplace=True)
 
         self.ln1 = nn.LayerNorm([input_dim, size, size])
         self.ln2 = nn.LayerNorm([input_dim, size, size])
@@ -104,7 +107,7 @@ class ResidualBlock(nn.Module):
         
         
     def forward(self, input):
-        shortcut = self.conv_shortcut(shortcut)
+        shortcut = self.conv_shortcut(input)
 
         output = self.ln1(input)
         output = self.relu1(output)
@@ -120,7 +123,7 @@ class ResidualBlock(nn.Module):
 
 class GeneratorResNet(nn.Module):
     def __init__(self, dim=256, output_dim=3*64*64):
-        super(Generator, self).__init__()
+        super(GeneratorResNet, self).__init__()
 
         self.dim = dim
         
@@ -129,7 +132,7 @@ class GeneratorResNet(nn.Module):
         #self.conv1 = conv3x3(512, self.dim, 3)
         
         self.ln1 = nn.Linear(128, 3*3*self.dim, bias=False)
-        self.reshape = View((-1, self.dim, 3, 3))
+        self.reshape = View((self.dim, 3, 3))
         
         self.rb1 = ResidualBlockUpSample(self.dim, size=3)
         self.rb2 = ResidualBlockUpSample(self.dim, size=6)
@@ -138,7 +141,7 @@ class GeneratorResNet(nn.Module):
         self.bn  = nn.BatchNorm2d(self.dim)
 
         self.conv1 = conv3x3(self.dim, 3)
-        self.relu = nn.ReLU()
+        self.relu = nn.ReLU(True)
         self.tanh = nn.Tanh()
 
     def forward(self, input):
@@ -158,7 +161,7 @@ class GeneratorResNet(nn.Module):
 
 class DiscriminatorResNet(nn.Module):
     def __init__(self, dim=256):
-        super(Discriminator, self).__init__()
+        super(DiscriminatorResNet, self).__init__()
 
         self.dim = dim
 
