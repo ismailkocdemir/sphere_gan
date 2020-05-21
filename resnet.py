@@ -23,21 +23,20 @@ class ResidualBlockDownSample(nn.Module):
         super(ResidualBlockDownSample, self).__init__()
         
         half_size = size//2
-        quarter_size = size//2
-        
+
         self.avg_pool1 = nn.AdaptiveAvgPool2d((half_size,half_size))
         self.conv_shortcut = nn.Conv2d(input_dim, input_dim, kernel_size = 1)
 
-        self.relu1 = nn.LeakyReLU(0.2, inplace=True)
-        self.relu2 = nn.LeakyReLU(0.2, inplace=True)
+        self.relu1 = nn.LeakyReLU(0.2)
+        self.relu2 = nn.LeakyReLU(0.2)
 
         self.ln1 = nn.LayerNorm([input_dim, size, size])
-        self.ln2 = nn.LayerNorm([input_dim, quarter_size, quarter_size])
+        self.ln2 = nn.LayerNorm([input_dim, half_size, half_size])
         
         self.conv_1 = conv3x3(input_dim, input_dim, bias = False)
         self.conv_2 = conv3x3(input_dim, input_dim, bias = False)
         
-        self.avg_pool2 = nn.AdaptiveAvgPool2d((quarter_size,quarter_size))
+        self.avg_pool2 = nn.AdaptiveAvgPool2d((half_size, half_size))
         
         
     def forward(self, input):
@@ -57,7 +56,7 @@ class ResidualBlockDownSample(nn.Module):
         return shortcut + output
 
 class ResidualBlockUpSample(nn.Module):
-    def __init__(self, input_dim, size=64):
+    def __init__(self, input_dim, size):
         super(ResidualBlockUpSample, self).__init__()
         
         self.upsample1 = nn.Upsample(scale_factor=2)
@@ -96,8 +95,8 @@ class ResidualBlock(nn.Module):
     
         self.conv_shortcut = nn.Conv2d(input_dim, input_dim, kernel_size = 1)
 
-        self.relu1 = nn.LeakyReLU(0.2, inplace=True)
-        self.relu2 = nn.LeakyReLU(0.2, inplace=True)
+        self.relu1 = nn.LeakyReLU(0.2)
+        self.relu2 = nn.LeakyReLU(0.2)
 
         self.ln1 = nn.LayerNorm([input_dim, size, size])
         self.ln2 = nn.LayerNorm([input_dim, size, size])
@@ -122,7 +121,7 @@ class ResidualBlock(nn.Module):
 
 
 class GeneratorResNet(nn.Module):
-    def __init__(self, dim=256, output_dim=3*64*64):
+    def __init__(self, dim=256):
         super(GeneratorResNet, self).__init__()
 
         self.dim = dim
@@ -145,16 +144,70 @@ class GeneratorResNet(nn.Module):
         self.tanh = nn.Tanh()
 
     def forward(self, input):
-        output = self.ln1(input) #self.ln1(input.contiguous())
+        output = input
+        _isnan = torch.isnan(output)
+        if _isnan.any():
+            print("input")
+            #print(output[_isnan])
+
+        output = self.ln1(output) #self.ln1(input.contiguous())
+
+        _isnan = torch.isnan(output)
+        if _isnan.any():
+            print("linear")
+            #print(output[_isnan])
+
         output = self.reshape(output)
+        _isnan = torch.isnan(output)
+        if _isnan.any():
+            print("reshape")
+            #print(output[_isnan])
+
         output = self.rb1(output)
+        _isnan = torch.isnan(output)
+        if _isnan.any():
+            print("rb1")
+            #print(output[_isnan])
+
+
         output = self.rb2(output)
+        _isnan = torch.isnan(output)
+        if _isnan.any():
+            print("rb2")
+            #print(output[_isnan])
+
         output = self.rb3(output)
+        _isnan = torch.isnan(output)
+        if _isnan.any():
+            print("rb3")
+            #print(output[_isnan])
+
         output = self.rb4(output)
+        _isnan = torch.isnan(output)
+        if _isnan.any():
+            print("rb4")
+            #print(output[_isnan])
+
 
         output = self.bn(output)
+        _isnan = torch.isnan(output)
+        if _isnan.any():
+            print("bathcnorm")
+            #print(output[_isnan])
+
+
         output = self.relu(output)
+        _isnan = torch.isnan(output)
+        if _isnan.any():
+            print("relu")
+            #print(output[_isnan])
+
         output = self.conv1(output)
+        _isnan = torch.isnan(output)
+        if _isnan.any():
+            print("conv_1")
+            #print(output[_isnan])
+
         output = self.tanh(output)
         #output = output.view(-1, 3 * self.dim * self.dim)
         return output
@@ -165,7 +218,7 @@ class DiscriminatorResNet(nn.Module):
 
         self.dim = dim
 
-        self.conv1 = conv3x3(3, self.dim, 3)
+        self.conv1 = conv3x3(3, self.dim)
         self.rb1 = ResidualBlockDownSample(self.dim, size=48)
         self.rb2 = ResidualBlockDownSample(self.dim, size=24)
         self.rb3 = ResidualBlockDownSample(self.dim, size=12)
@@ -177,9 +230,7 @@ class DiscriminatorResNet(nn.Module):
 
     def forward(self, input):
         output = input
-        
         #output = output.view(-1, 3, self.dim, self.dim)
-        
         output = self.conv1(output)
         output = self.rb1(output)
         output = self.rb2(output)
