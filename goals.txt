@@ -1,0 +1,3 @@
+http://openaccess.thecvf.com/content_CVPR_2019/papers/Park_Sphere_Generative_Adversarial_Network_Based_on_Geometric_Moment_Matching_CVPR_2019_paper.pdf
+Figure 7. Qualitative results of sphere GAN for STL-10 dataset.
+Table 3. IS and FID scores on STL-10 dataset (specifically the 4th and last rows showing the scores for SphereGAN-Conv and SphereGAN-ResNet). 

@@ -2,7 +2,7 @@ from torch import nn
 from torch.autograd import grad
 import torch
 
-from utils import *
+from model_utils import *
 
 class conv3x3(nn.Module):
     def __init__(self, input_dim, output_dim = None, bias = False):
@@ -132,6 +132,8 @@ class GeneratorResNet(nn.Module):
         
         self.ln1 = nn.Linear(128, 3*3*self.dim, bias=False)
         self.reshape = View((self.dim, 3, 3))
+        self.bn_ln  = nn.BatchNorm2d(self.dim)
+
         
         self.rb1 = ResidualBlockUpSample(self.dim, size=3)
         self.rb2 = ResidualBlockUpSample(self.dim, size=6)
@@ -145,69 +147,19 @@ class GeneratorResNet(nn.Module):
 
     def forward(self, input):
         output = input
-        _isnan = torch.isnan(output)
-        if _isnan.any():
-            print("input")
-            #print(output[_isnan])
-
+        
         output = self.ln1(output) #self.ln1(input.contiguous())
-
-        _isnan = torch.isnan(output)
-        if _isnan.any():
-            print("linear")
-            #print(output[_isnan])
-
         output = self.reshape(output)
-        _isnan = torch.isnan(output)
-        if _isnan.any():
-            print("reshape")
-            #print(output[_isnan])
-
+        output = self.bn_ln(output)
+        
         output = self.rb1(output)
-        _isnan = torch.isnan(output)
-        if _isnan.any():
-            print("rb1")
-            #print(output[_isnan])
-
-
         output = self.rb2(output)
-        _isnan = torch.isnan(output)
-        if _isnan.any():
-            print("rb2")
-            #print(output[_isnan])
-
         output = self.rb3(output)
-        _isnan = torch.isnan(output)
-        if _isnan.any():
-            print("rb3")
-            #print(output[_isnan])
-
         output = self.rb4(output)
-        _isnan = torch.isnan(output)
-        if _isnan.any():
-            print("rb4")
-            #print(output[_isnan])
-
-
         output = self.bn(output)
-        _isnan = torch.isnan(output)
-        if _isnan.any():
-            print("bathcnorm")
-            #print(output[_isnan])
-
 
         output = self.relu(output)
-        _isnan = torch.isnan(output)
-        if _isnan.any():
-            print("relu")
-            #print(output[_isnan])
-
         output = self.conv1(output)
-        _isnan = torch.isnan(output)
-        if _isnan.any():
-            print("conv_1")
-            #print(output[_isnan])
-
         output = self.tanh(output)
         #output = output.view(-1, 3 * self.dim * self.dim)
         return output
