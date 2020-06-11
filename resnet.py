@@ -5,6 +5,9 @@ import torch
 from model_utils import *
 
 class conv3x3(nn.Module):
+    '''
+        3x3 Conv utility class
+    '''
     def __init__(self, input_dim, output_dim = None, bias = False):
         super(conv3x3, self).__init__()
         
@@ -19,7 +22,16 @@ class conv3x3(nn.Module):
 
 
 class ResidualBlockDownSample(nn.Module):
-    def __init__(self, input_dim,  size=48):
+    '''
+        Residual block with downsplampled shortcut, which reduces the spatial size by half.
+        To be used in Discrimintor.
+
+        Args:
+            input_dim: number of features
+            size: spatial dimension of the input.
+
+    '''
+    def __init__(self, input_dim, size=48):
         super(ResidualBlockDownSample, self).__init__()
         
         half_size = size//2
@@ -56,6 +68,14 @@ class ResidualBlockDownSample(nn.Module):
         return shortcut + output
 
 class ResidualBlockUpSample(nn.Module):
+    """
+        Residual block with upsampled shortcut, which doubles the spatial size.
+        To be used in Discrimintor.
+
+        Args:
+            input_dim: number of features
+            size: spatial dimension of the input.
+    """
     def __init__(self, input_dim, size):
         super(ResidualBlockUpSample, self).__init__()
         
@@ -90,6 +110,10 @@ class ResidualBlockUpSample(nn.Module):
         return shortcut + output
 
 class ResidualBlock(nn.Module):
+    """
+        Standart residual block with layernorm instead of batchnorm.
+
+    """
     def __init__(self, input_dim, size):
         super(ResidualBlock, self).__init__()
     
@@ -119,21 +143,24 @@ class ResidualBlock(nn.Module):
         return shortcut + output
 
 
-
 class GeneratorResNet(nn.Module):
+    """
+        Resnet Generator Network
+
+        Dimension flow:
+            128 => dim,3,3 => dim,6,6 => dim,12,12 => dim,24,24 => dim,48,48 => 3,48,48
+
+        Args:
+            dim: number of features
+    """
     def __init__(self, dim=256):
         super(GeneratorResNet, self).__init__()
 
         self.dim = dim
         
-        #self.ln1 = nn.Linear(128, 3*3*512, bias=False)
-        #self.reshape = View((-1, 512, 3, 3))
-        #self.conv1 = conv3x3(512, self.dim, 3)
-        
         self.ln1 = nn.Linear(128, 3*3*self.dim, bias=False)
         self.reshape = View((self.dim, 3, 3))
         self.bn_ln  = nn.BatchNorm2d(self.dim)
-
         
         self.rb1 = ResidualBlockUpSample(self.dim, size=3)
         self.rb2 = ResidualBlockUpSample(self.dim, size=6)
@@ -148,7 +175,7 @@ class GeneratorResNet(nn.Module):
     def forward(self, input):
         output = input
         
-        output = self.ln1(output) #self.ln1(input.contiguous())
+        output = self.ln1(output)
         output = self.reshape(output)
         output = self.bn_ln(output)
         
@@ -161,10 +188,19 @@ class GeneratorResNet(nn.Module):
         output = self.relu(output)
         output = self.conv1(output)
         output = self.tanh(output)
-        #output = output.view(-1, 3 * self.dim * self.dim)
+
         return output
 
 class DiscriminatorResNet(nn.Module):
+    """
+        Resnet Discriminator Network attached with Geometric block.
+
+        Dimension flow:
+            3,48,48 => dim,48,48 => dim,24,24 => dim,12,12 => dim,6,6 => dim,3,3
+
+        Args:
+            dim: number of features
+    """
     def __init__(self, dim=256):
         super(DiscriminatorResNet, self).__init__()
 
@@ -182,7 +218,6 @@ class DiscriminatorResNet(nn.Module):
 
     def forward(self, input):
         output = input
-        #output = output.view(-1, 3, self.dim, self.dim)
         output = self.conv1(output)
         output = self.rb1(output)
         output = self.rb2(output)

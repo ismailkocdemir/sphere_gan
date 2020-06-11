@@ -14,7 +14,6 @@ import torchvision.datasets as dset
 import torchvision.transforms as transforms
 
 from inception import InceptionV3
-#from utils import *
 
 def imread(filename):
     return np.asarray(Image.open(filename), dtype=np.uint8)[..., :3]
@@ -105,18 +104,5 @@ def calculate_fid_given_paths(paths, batch_size, device):
     fid_value = calculate_frechet_distance(m1, s1, m2, s2)
 
     return fid_value
-
-'''
-if __name__ == '__main__':
-
-    save_stl10_images("../data", "../stl_samples_batch1", 10000)
-    save_stl10_images("../data", "../stl_samples_batch2", 10000)
-
-    paths = ["../stl_samples_batch1", "../stl_samples_batch2"]
-    device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
-
-    fid = calculate_fid_given_paths(paths=paths, batch_size=16, device=device)
-    print("FID btwn real samples:", fid)
-'''
 
 

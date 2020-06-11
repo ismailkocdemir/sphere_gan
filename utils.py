@@ -16,7 +16,11 @@ from resnet import DiscriminatorResNet, GeneratorResNet
 from inception_score import *
 from frechet_inception_distance import *
 
+
 def get_stl10_dataloader_save(dataroot, batch_size, workers, image_size=48):
+	'''
+		Returns a loader for unlabeled images that will be used in IS and FID calculation.
+	'''
 	unl_set = dset.STL10(root=dataroot, download=True, split='unlabeled',
 					transform=transforms.Compose([
 					   transforms.Resize(image_size),
@@ -31,7 +35,10 @@ def get_stl10_dataloader_save(dataroot, batch_size, workers, image_size=48):
 	return loader
 
 def save_stl10_images(dataroot, folder, num_images=1024):
+	'''
+		Using unlabeled dataloader, this one save images to given folder to be used in IS and FID calculation.
 
+	'''
 	if not os.path.exists(folder):
 		os.makedirs(folder)
 	
@@ -54,6 +61,10 @@ def save_stl10_images(dataroot, folder, num_images=1024):
 
 
 def get_stl10_dataloader(dataroot, batch_size, workers, image_size=48):
+	'''
+		Returns a loader for training images that will be used in training.
+
+	'''
 	train_set = dset.STL10(root=dataroot, download=True,
 					transform=transforms.Compose([
 					   transforms.Resize(image_size),
@@ -129,11 +140,11 @@ def plot_loss(G_losses, D_losses, save_path):
 
 
 def generate_images(model, num_samples, device, save_path):
-	# Grab a batch of real images from the dataloader
-
+	'''
+		generates images with the given model.
+	'''
 	if not os.path.exists(save_path):
 		os.makedirs(save_path)
-
 
 	batch_size = 64
 	fixed_noise = torch.randn(num_samples, 128, device="cpu")
@@ -163,17 +174,6 @@ def generate_images(model, num_samples, device, save_path):
 			idx += 1
 
 
-	'''
-	real_batch = next(iter(dataloader))
-
-	# Plot the real images
-	plt.figure(figsize=(15,15))
-	plt.subplot(1,2,1)
-	plt.axis("off")
-	plt.title("Real Images")
-	plt.imshow(np.transpose(vutils.make_grid(real_batch[0].to(device)[:64], padding=5, normalize=True).cpu(),(1,2,0)))
-	'''
-
 	img_list = np.array(img_list)[:64]
 	plt.figure(figsize=(15,15))
 	plt.title("Generated Images")
@@ -183,7 +183,9 @@ def generate_images(model, num_samples, device, save_path):
 	plt.savefig("./figures/generated_images_{}.svg".format(arch))
 
 def eval_model(model, dataroot, num_samples, device, save_path):
-
+	'''
+		This one unifies process of qualitative and quantitative evaluation
+	'''
 	batch_size = 8
 
 	print("Generating images...")
@@ -194,9 +196,11 @@ def eval_model(model, dataroot, num_samples, device, save_path):
 	save_stl10_images(dataroot, real_save_path, num_samples)
 
 	print("Calculating IS...")
+	# Calculate the IS score using only the generated images.
 	is_mean, is_std = calculate_is_score_given_path(save_path, batch_size, device)
 
 	print("Calculating FID...")
+	# Calculate the FID scores using real and generated images.
 	paths = [save_path, real_save_path]
 	fid = calculate_fid_given_paths(paths, batch_size, device)
 
@@ -204,12 +208,3 @@ def eval_model(model, dataroot, num_samples, device, save_path):
 	print("FID:", fid)
 
 	return is_mean, is_std, fid
-
-
-
-
-if __name__ == '__main__':
-	from torchvision.models.inception import inception_v3
-
-	model = inception_v3(pretrained=True)
-	save_model(model, "./data/inception_v3.pt")
