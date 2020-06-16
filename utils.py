@@ -59,6 +59,27 @@ def save_stl10_images(dataroot, folder, num_images=1024):
 			idx += 1
 
 
+def get_mnist_dataloader(dataroot, batch_size, workers, image_size=48):
+	'''
+		Returns a loader for training images that will be used in training.
+
+	'''
+
+	train_set = dset.MNIST(root=dataroot, download=True,
+					transform=transforms.Compose([
+					   transforms.Resize(image_size),
+					   transforms.ToTensor(),
+					   transforms.Normalize((0.5, ), (0.511, )),
+					   ]))
+
+	train_loader = torch.utils.data.DataLoader(
+						train_set,
+						batch_size=batch_size, shuffle=True,
+						num_workers=workers, pin_memory=False, drop_last=True)
+
+	return train_loader
+
+
 
 def get_stl10_dataloader(dataroot, batch_size, workers, image_size=48):
 	'''

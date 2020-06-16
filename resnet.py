@@ -153,12 +153,12 @@ class GeneratorResNet(nn.Module):
         Args:
             dim: number of features
     """
-    def __init__(self, dim=256):
+    def __init__(self, dim=128):
         super(GeneratorResNet, self).__init__()
 
         self.dim = dim
         
-        self.ln1 = nn.Linear(128, 3*3*self.dim, bias=False)
+        self.ln1 = nn.Linear(64, 3*3*self.dim, bias=False)
         self.reshape = View((self.dim, 3, 3))
         self.bn_ln  = nn.BatchNorm2d(self.dim)
         
@@ -168,7 +168,7 @@ class GeneratorResNet(nn.Module):
         self.rb4 = ResidualBlockUpSample(self.dim, size=24)
         self.bn  = nn.BatchNorm2d(self.dim)
 
-        self.conv1 = conv3x3(self.dim, 3)
+        self.conv1 = conv3x3(self.dim, 1)
         self.relu = nn.ReLU(True)
         self.tanh = nn.Tanh()
 
@@ -201,12 +201,12 @@ class DiscriminatorResNet(nn.Module):
         Args:
             dim: number of features
     """
-    def __init__(self, dim=256):
+    def __init__(self, dim=128):
         super(DiscriminatorResNet, self).__init__()
 
         self.dim = dim
 
-        self.conv1 = conv3x3(3, self.dim)
+        self.conv1 = conv3x3(1, self.dim)
         self.rb1 = ResidualBlockDownSample(self.dim, size=48)
         self.rb2 = ResidualBlockDownSample(self.dim, size=24)
         self.rb3 = ResidualBlockDownSample(self.dim, size=12)

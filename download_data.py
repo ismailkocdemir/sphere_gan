@@ -9,6 +9,5 @@ torch.save(model, "./data/inception_v3.pt")
 
 # DOWNLOAD UNLABELED SET AND TRAIN SET OF THE STL10 DATASET.
 print("Downloading STL10...")
-unlabeled_set = dset.STL10(root="./data", download=True, split='unlabeled')
-train_set = dset.STL10(root="./data", download=True, split='train')
+train_set = dset.MNIST(root="./data", download=True, train=True)
 
