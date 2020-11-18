@@ -1,4 +1,6 @@
-# Ceng796 Class Project: Sphere Generative Adversarial Network Based on Geometric Moment Matching
+Sphere Generative Adversarial Network Based on Geometric Moment Matching
+
+Pytorch implementation of the paper Sphere Generative Adversarial Network Based on Geometric Moment Matching (Sung Woo Park and Junseok Kwon)
 
 ## Usage
 
