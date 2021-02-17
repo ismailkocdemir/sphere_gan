@@ -1,6 +1,6 @@
 ## Sphere Generative Adversarial Network Based on Geometric Moment Matching
 
-THIS IMPLEMENTATION IS NOT COMPLETE AND GIVING INFERIOR RESULTS COMPARED TO THE REPORTED ONES.
+NOTE THAT THIS IMPLEMENTATION IS NOT COMPLETE AND GIVING INFERIOR RESULTS COMPARED TO THE ORIGINAL PAPER.
 
 Pytorch implementation of the paper Sphere Generative Adversarial Network Based on Geometric Moment Matching (Sung Woo Park and Junseok Kwon)
 
